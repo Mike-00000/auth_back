@@ -1,3 +1,10 @@
+from datetime import datetime
+import time
+
+print("Heure actuelle UTC:", datetime.utcnow())
+print("Fuseau horaire système:", time.tzname)
+
+
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -13,7 +20,7 @@ from sqlalchemy import DateTime
 
 # create the app
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="http://localhost:3000", methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"], supports_credentials=True)
 
 jwt = JWTManager(app)
 
@@ -90,6 +97,8 @@ def signin():
     # tests log
     print("Req data =>", data)
     print("DB query user", user)
+    print(app.config['JWT_ACCESS_TOKEN_EXPIRES'])
+
     
     if not user or not check_password_hash(user.password, data['password']):
         return jsonify({"message": "Invalid credentials!"}), 401
@@ -98,7 +107,33 @@ def signin():
     db.session.commit()
 
     access_token = create_access_token(identity=user.email) 
-    return jsonify({"access_token": access_token})
+    return jsonify({"access_token": access_token, "firstName": user.first_name, "lastName": user.last_name})
+
+
+@app.route('/user-info', methods=['GET'])
+@jwt_required()
+def user_info():
+    current_user_email = get_jwt_identity()
+    print("Identité JWT (Email) :", current_user_email)
+
+    # Pour débogage: Imprimer l'en-tête d'Authorization
+    print("En-tête d'Authorization :", request.headers.get('Authorization'))
+
+    user = User.query.filter_by(email=current_user_email).first()
+
+    if not user:
+        print("Utilisateur non trouvé pour l'email :", current_user_email)
+        return jsonify({"message": "User not found"}), 404
+
+    user_data = {
+        "firstName": user.first_name,
+        "lastName": user.last_name,
+        # Ajoutez d'autres champs si nécessaire
+    }
+
+    print("Données de l'utilisateur :", user_data)
+    return jsonify(user_data), 200
+
 
 @app.route('/create-org', methods=['POST'])
 def create_org():
