@@ -20,10 +20,11 @@ from sqlalchemy import DateTime
 
 # create the app
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000", 
-     methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"], 
-     allow_headers=["Authorization", "Content-Type"], 
-     supports_credentials=True)
+# CORS(app, origins="http://localhost:3000", 
+#      methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"], 
+#      allow_headers=["Authorization", "Content-Type"], 
+#      supports_credentials=True)
+CORS(app)
 
 # CORS(app, origins="*", methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"], allow_headers=["Authorization", "Content-Type"], supports_credentials=True)
 # CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -113,22 +114,22 @@ def signin():
     user.last_login = datetime.utcnow()
     db.session.commit()
 
-    access_token = create_access_token(identity=user.email) 
+    access_token = create_access_token(identity=user.id) 
     return jsonify({"access_token": access_token, "firstName": user.first_name, "lastName": user.last_name})
 
 
 @app.route('/user-info', methods=['GET'])
 @jwt_required()
 def user_info():
-    current_user_email = get_jwt_identity()
-    print("Identité JWT (Email) :", current_user_email)
+    current_user_id = get_jwt_identity()
+    # print("Identité JWT (Email) :", current_user_email)
     print("En-tête d'Authorization :", request.headers.get('Authorization'))
 
     # Pour débogage: Imprimer l'en-tête d'Authorization
     print("En-tête d'Authorization :", request.headers.get('Authorization'))
 
-    user = User.query.filter_by(email=current_user_email).first()
-
+    # user = User.query.filter_by(email=current_user_email).first()
+    user = User.query.get(current_user_id)
     if not user:
         print("Utilisateur non trouvé pour l'email :", current_user_email)
         return jsonify({"message": "User not found"}), 404
@@ -185,9 +186,9 @@ def add_user_to_org():
 def dashboard():
     # current_user_id = get_jwt_identity()  # Récupère l'identifiant de l'utilisateur connecté
     # user = User.query.get(current_user_id)  # Récupérez les informations de l'utilisateur de la base de données
-    current_user_email = get_jwt_identity()
-    user = User.query.filter_by(email=current_user_email).first()  # Query by email
-
+    current_user_id = get_jwt_identity()
+    # user = User.query.filter_by(email=current_user_email).first()  # Query by email
+    user = User.query.get(current_user_id)
 
     if not user:
         return jsonify({"message": "User not found"}), 404
