@@ -20,7 +20,13 @@ from sqlalchemy import DateTime
 
 # create the app
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000", methods=["GET", "POST", "OPTIONS"], allow_headers=["Authorization", "Content-Type"], supports_credentials=True)
+CORS(app, origins="http://localhost:3000", 
+     methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"], 
+     allow_headers=["Authorization", "Content-Type"], 
+     supports_credentials=True)
+
+# CORS(app, origins="*", methods=["GET", "POST", "DELETE", "PUT", "OPTIONS"], allow_headers=["Authorization", "Content-Type"], supports_credentials=True)
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 jwt = JWTManager(app)
 
@@ -93,6 +99,7 @@ def signup():
 @app.route('/signin', methods=['POST'])
 def signin():
     data = request.get_json()
+    print("Requête reçue pour /signin avec les données :", data)
     user = User.query.filter_by(email=data['email']).first()  # Modified here
     # tests log
     print("Req data =>", data)
@@ -115,6 +122,7 @@ def signin():
 def user_info():
     current_user_email = get_jwt_identity()
     print("Identité JWT (Email) :", current_user_email)
+    print("En-tête d'Authorization :", request.headers.get('Authorization'))
 
     # Pour débogage: Imprimer l'en-tête d'Authorization
     print("En-tête d'Authorization :", request.headers.get('Authorization'))
@@ -136,8 +144,10 @@ def user_info():
 
 
 @app.route('/create-org', methods=['POST'])
+@jwt_required()
 def create_org():
     data = request.get_json()
+    current_user_id = get_jwt_identity() 
 
     if Organization.query.filter_by(name=data['name']).first():
         return jsonify({"message": "This organization already exists"}), 400
@@ -145,6 +155,8 @@ def create_org():
     new_org = Organization(
         name=data['name'],
         description=data.get('description', ''),
+        country=data.get('country'),
+        creator_id=current_user_id
     )
     db.session.add(new_org)
     db.session.commit()
