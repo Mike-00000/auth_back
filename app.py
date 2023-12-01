@@ -93,9 +93,11 @@ def signup():
     
     hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256')
     new_user = User(email=data['email'], password=hashed_password, first_name=first_name, last_name=last_name)
+
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"message": "User created!"}), 201
+    access_token = create_access_token(identity=new_user.id)
+    return jsonify({"access_token": access_token, "firstName": new_user.first_name, "lastName": new_user.last_name}), 201
 
 @app.route('/signin', methods=['POST'])
 def signin():
