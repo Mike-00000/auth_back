@@ -36,10 +36,10 @@ app.config.from_object(Config)
 
 app.config['SQLALCHEMY_DATABASE_URI']
 app.config['JWT_SECRET_KEY'] 
-# disables a feature that automatically tracks modifications to objects and emits signals 
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
 
-# this variable, db, will be used for all SQLAlchemy commands
+
 db = SQLAlchemy(app)
 
 migrate = Migrate(app, db)
@@ -50,7 +50,7 @@ members_association_table = db.Table('members',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('organization_id', db.Integer, db.ForeignKey('organization.id'), primary_key=True)
 )
-# class represent a table in database
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100))
@@ -103,8 +103,7 @@ def signup():
 def signin():
     data = request.get_json()
     print("Requête reçue pour /signin avec les données :", data)
-    user = User.query.filter_by(email=data['email']).first()  # Modified here
-    # tests log
+    user = User.query.filter_by(email=data['email']).first()
     print("Req data =>", data)
     print("DB query user", user)
     print(app.config['JWT_ACCESS_TOKEN_EXPIRES'])
@@ -125,9 +124,6 @@ def signin():
 def user_info():
     current_user_id = get_jwt_identity()
     # print("Identité JWT (Email) :", current_user_email)
-    print("En-tête d'Authorization :", request.headers.get('Authorization'))
-
-    # Pour débogage: Imprimer l'en-tête d'Authorization
     print("En-tête d'Authorization :", request.headers.get('Authorization'))
 
     # user = User.query.filter_by(email=current_user_email).first()
@@ -186,16 +182,16 @@ def add_user_to_org():
 @app.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
-    # current_user_id = get_jwt_identity()  # Récupère l'identifiant de l'utilisateur connecté
-    # user = User.query.get(current_user_id)  # Récupérez les informations de l'utilisateur de la base de données
+    # current_user_id = get_jwt_identity() 
+    # user = User.query.get(current_user_id) 
     current_user_id = get_jwt_identity()
-    # user = User.query.filter_by(email=current_user_email).first()  # Query by email
+    # user = User.query.filter_by(email=current_user_email).first()
     user = User.query.get(current_user_id)
 
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    # Exemple de données à envoyer
+    
     user_data = {
         "email": user.email,
         "first_name": user.first_name,
@@ -204,7 +200,7 @@ def dashboard():
             {
                 "name": org.name,
                 "description": org.description,
-                "date_created": org.date_created.strftime("%Y-%m-%d %H:%M:%S")  # Formatage de la date
+                "date_created": org.date_created.strftime("%Y-%m-%d %H:%M:%S")  
             }
             for org in user.organizations
         ]
